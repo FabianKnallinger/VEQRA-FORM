@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Test- und Lint-Caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Build-Artefakte
+dist/*.allep
+build/
+
+# Externe Referenzen und Altbestand (nur lokal)
+_external/
+_legacy/
+
+# Zugangsdaten duerfen nie eingecheckt werden
+.env
+.env.*
+secrets*
+
+# IDE / Betriebssystem
+.vscode/
+.idea/
+.DS_Store

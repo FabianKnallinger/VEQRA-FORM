@@ -1,0 +1,6 @@
+# VEQRA FORM - Laufzeitabhaengigkeiten des Plugins
+#
+# Diese Datei wird gemaess offizieller ALLEP-Dokumentation im Stamm des
+# Pakets mitgeliefert. Das Plugin benoetigt in dieser Entwicklungsphase
+# keine externen Python-Pakete: Es verwendet ausschliesslich die mit
+# Allplan 2026 ausgelieferte Python-API.

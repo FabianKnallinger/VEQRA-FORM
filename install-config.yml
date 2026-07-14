@@ -1,0 +1,47 @@
+# VEQRA FORM - ALLEP Installationskonfiguration (Zielversion: Allplan 2025)
+#
+# Aufbau gemaess offizieller Allplan 2025 Dokumentation:
+# https://pythonparts.allplan.com/2025/manual/for_developer/allep/
+# (Abschnitt "Configuration File") sowie dem offiziellen Allplan 2025
+# PythonPart SDK Paket (PythonPartSDK.allep).
+#
+# WICHTIG: Die UUID wurde einmalig generiert und darf fuer die gesamte
+# Lebensdauer des Plugins NICHT mehr geaendert werden.
+
+plugin:
+  name: VEQRA FORM
+  UUID: 1a53ccd6-1076-4ac9-8949-168e8d7a7b7f
+  version: 0.1.0
+  developer: veqra
+  default-language: de
+  min-allplan-version: 2025
+
+installation:
+  # USR = Installation nur fuer den aktuellen Benutzer
+  target-location: USR
+  py-packages: requirements.in
+  Library: Library
+  PythonPartsScripts: PythonPartsScripts
+  PythonPartsActionbar: PythonPartsActionbar
+
+# Pfade in tools sind relativ zu den oben zugeordneten Ordnern
+# (wie im offiziellen PythonPart SDK: "pyp: StartPythonDebug.pyp")
+tools:
+  - id: veqra-form-cuboid
+    pyp: VeqraFormCuboid.pyp
+    display-name:
+      de: Quader erstellen
+      en: Create cuboid
+    icons:
+      small: VeqraFormCuboid_24.png
+      large: VeqraFormCuboid_128.png
+
+# Erzeugt einen eigenen Bereich "VEQRA FORM" im Reiter "Plug-ins"
+# (Doku 2025: "The installer can create one task area for each plugin
+# inside the Plug-ins tab in ALLPLAN.")
+task-area:
+  display-name:
+    de: VEQRA FORM
+    en: VEQRA FORM
+  layout:
+    - veqra-form-cuboid

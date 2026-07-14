@@ -1,0 +1,51 @@
+name: Build ALLEP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python installieren
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Entwicklungsabhaengigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Icons erzeugen
+        run: python tools/generate_icons.py
+
+      - name: Tests ausfuehren
+        run: python -m pytest
+
+      - name: ALLEP-Datei bauen
+        run: python tools/build_allep.py
+
+      - name: Paket validieren
+        run: python tools/validate_allep.py
+
+      - name: ALLEP als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: VeqraForm-allep
+          path: dist/VeqraForm.allep
+          if-no-files-found: error
+
+      - name: An GitHub Release anhaengen (nur bei Versions-Tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/VeqraForm.allep

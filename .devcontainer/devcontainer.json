@@ -1,0 +1,19 @@
+{
+    "name": "VEQRA FORM Entwicklung",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "charliermarsh.ruff",
+                "redhat.vscode-yaml"
+            ],
+            "settings": {
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["tests"]
+            }
+        }
+    },
+    "postCreateCommand": "pip install --upgrade pip && pip install -e '.[dev]'",
+    "remoteUser": "vscode"
+}
