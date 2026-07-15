@@ -10,6 +10,11 @@ authors = [{ name = "veqra" }]
 # Das Plugin selbst hat keine Laufzeitabhaengigkeiten (siehe requirements.in)
 dependencies = []
 
+# Dieses Repository ist kein installierbares Python-Paket; pyproject.toml
+# dient nur der Werkzeug-Konfiguration und den Dev-Abhaengigkeiten.
+[tool.setuptools]
+packages = []
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
