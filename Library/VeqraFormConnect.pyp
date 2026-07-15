@@ -4,7 +4,8 @@
 
     Aufbau nach den offiziellen Allplan 2025 Beispielen:
     - StartPythonDebug.pyp aus dem PythonPart SDK (<Interactor>True</Interactor>, Constants)
-    - PaletteExamples/ButtonControls/Buttons.pyp (Button mit EventId)
+    - PaletteExamples/ButtonControls/Buttons.pyp
+      (Button mit EventId, eingebettet in einen Row-Container)
     - SelectionExamples (Text-Parameter als Statusanzeige)
 -->
 <Element>
@@ -111,10 +112,15 @@
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
-                <Name>CheckConnectionButton</Name>
-                <Text>Verbindung prüfen</Text>
-                <EventId>1001</EventId>
-                <ValueType>Button</ValueType>
+                <Name>CheckConnectionRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>CheckConnectionButton</Name>
+                    <Text>Verbindung prüfen</Text>
+                    <EventId>CHECK_CONNECTION</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
         </Parameter>
 
@@ -154,10 +160,15 @@
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
-                <Name>SyncProjectButton</Name>
-                <Text>Projekt synchronisieren</Text>
-                <EventId>1002</EventId>
-                <ValueType>Button</ValueType>
+                <Name>SyncProjectRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>SyncProjectButton</Name>
+                    <Text>Projekt synchronisieren</Text>
+                    <EventId>SYNC_PROJECT</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
         </Parameter>
 
@@ -179,16 +190,26 @@
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
-                <Name>ReadSelectionButton</Name>
-                <Text>Auswahl lesen</Text>
-                <EventId>1003</EventId>
-                <ValueType>Button</ValueType>
+                <Name>ReadSelectionRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>ReadSelectionButton</Name>
+                    <Text>Auswahl lesen</Text>
+                    <EventId>READ_SELECTION</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
             <Parameter>
-                <Name>SyncSelectionButton</Name>
-                <Text>Auswahl synchronisieren</Text>
-                <EventId>1004</EventId>
-                <ValueType>Button</ValueType>
+                <Name>SyncSelectionRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>SyncSelectionButton</Name>
+                    <Text>Auswahl synchronisieren</Text>
+                    <EventId>SYNC_SELECTION</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
         </Parameter>
 
@@ -210,28 +231,48 @@
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
-                <Name>CheckCommandButton</Name>
-                <Text>Auftrag prüfen</Text>
-                <EventId>1005</EventId>
-                <ValueType>Button</ValueType>
+                <Name>CheckCommandRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>CheckCommandButton</Name>
+                    <Text>Auftrag prüfen</Text>
+                    <EventId>CHECK_COMMAND</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
             <Parameter>
-                <Name>PreviewCommandButton</Name>
-                <Text>Vorschau</Text>
-                <EventId>1006</EventId>
-                <ValueType>Button</ValueType>
+                <Name>PreviewCommandRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>PreviewCommandButton</Name>
+                    <Text>Vorschau</Text>
+                    <EventId>PREVIEW_COMMAND</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
             <Parameter>
-                <Name>ExecuteCommandButton</Name>
-                <Text>Ausführen</Text>
-                <EventId>1007</EventId>
-                <ValueType>Button</ValueType>
+                <Name>ExecuteCommandRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>ExecuteCommandButton</Name>
+                    <Text>Ausführen</Text>
+                    <EventId>EXECUTE_COMMAND</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
             <Parameter>
-                <Name>RejectCommandButton</Name>
-                <Text>Ablehnen</Text>
-                <EventId>1008</EventId>
-                <ValueType>Button</ValueType>
+                <Name>RejectCommandRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>RejectCommandButton</Name>
+                    <Text>Ablehnen</Text>
+                    <EventId>REJECT_COMMAND</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
         </Parameter>
 
@@ -253,10 +294,15 @@
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
-                <Name>OpenWebButton</Name>
-                <Text>Weboberfläche öffnen</Text>
-                <EventId>1009</EventId>
-                <ValueType>Button</ValueType>
+                <Name>OpenWebRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>OpenWebButton</Name>
+                    <Text>Weboberfläche öffnen</Text>
+                    <EventId>OPEN_WEB</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
             </Parameter>
         </Parameter>
 

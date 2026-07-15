@@ -202,8 +202,6 @@ Erlaubte Befehle im MVP: `inspect_project`, `inspect_selection`,
 
 ## 15. Bekannte Grenzen
 
-- **Teilbildnamen** sind über die dokumentierte `DrawingFileService`-API nicht
-  abrufbar; erfasst werden Nummer und Ladezustand.
 - Der Projektscan liest die Elemente des aktuellen Dokuments
   (`ElementsSelectService.SelectAllElements`); nicht geladene Teilbilder
   werden nicht im Hintergrund geöffnet oder gescannt.

@@ -109,9 +109,17 @@ class VeqraFormConnect(BaseInteractor):
             control_props_list, self.build_ele.pyp_file_name)
         self.palette_service.show_palette(self.build_ele.pyp_file_name)
 
-        # Beim Start: nur lesende Statusanzeige, keine Modellaenderung
-        self._refresh_connection_status(register_if_needed=False)
+        # Leerlauf-Eingabe wie im offiziellen Beispiel
+        # DrawingFileDataInteractor.py ("Execute by button click")
         self._start_idle_input()
+
+        # Beim Start: nur lesende Statusanzeige, keine Modellaenderung.
+        # Ein Fehler hier darf den Werkzeugstart niemals verhindern.
+        try:
+            self._refresh_connection_status(register_if_needed=False)
+        except Exception as error:  # Details nur im Trace, nie in der Palette
+            print("VeqraFormConnect: Statusabfrage beim Start fehlgeschlagen:", error)
+            self._set_status(veqra_protocol.MSG_BRIDGE_UNREACHABLE)
         self.palette_service.update_palette(-1, True)
 
     # ------------------------------------------------------------------
@@ -119,10 +127,14 @@ class VeqraFormConnect(BaseInteractor):
     # ------------------------------------------------------------------
 
     def _start_idle_input(self) -> None:
-        """Neutrale Punkteingabe; Klicks im Leerlauf aendern nichts am Modell."""
+        """Neutraler Leerlauf; Klicks im Leerlauf aendern nichts am Modell.
 
-        # InitNextPointInput wie im offiziellen Beispiel CopyElements.py
-        self.coord_input.InitNextPointInput(
+        InitFirstElementInput wie in den offiziellen button-gesteuerten
+        Interactor-Beispielen (z. B. DrawingFileDataInteractor.py:
+        "Execute by button click").
+        """
+
+        self.coord_input.InitFirstElementInput(
             AllplanIFW.InputStringConvert("VEQRA FORM: Aktionen über die Palette wählen"))
         self.input_mode = "idle"
 
@@ -156,7 +168,8 @@ class VeqraFormConnect(BaseInteractor):
         try:
             health = client.health()
             bridge_ok = health.get("status") == "ok"
-        except veqra_bridge_client.BridgeUnreachableError:
+        except (veqra_bridge_client.BridgeUnreachableError,
+                veqra_bridge_client.BridgeRequestError):
             bridge_ok = False
 
         if bridge_ok and register_if_needed and client.session_token is None:
@@ -230,6 +243,10 @@ class VeqraFormConnect(BaseInteractor):
             self._set_status(error.message_de)
         except veqra_protocol.CommandValidationError as error:
             self._set_status(error.message_de)
+        except Exception as error:  # niemals ein roher Traceback in der Palette
+            print("VeqraFormConnect: unerwarteter Fehler bei Ereignis",
+                  event_id, ":", error)
+            self._set_status("Unerwarteter Fehler. Details stehen im Trace-Fenster.")
 
         self._update_palette()
 

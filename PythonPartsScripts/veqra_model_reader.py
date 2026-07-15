@@ -4,9 +4,6 @@ Alle Zugriffe erfolgen ueber die dokumentierte Allplan Python API; jede
 Funktion nennt das offizielle Beispiel bzw. den Doku-Abschnitt als Quelle.
 
 Dokumentierte Grenzen dieser Version:
-- Teilbildnamen sind ueber DrawingFileService nicht abrufbar (die API bietet
-  GetFileState/GetActiveFileNumber, aber keinen Namensabruf); erfasst werden
-  Nummer und Ladezustand.
 - Es werden nur Elemente des aktuellen Dokuments gelesen
   (ElementsSelectService.SelectAllElements liest das uebergebene Dokument).
 - Es wird niemals Bildschirm-OCR verwendet; ausschliesslich Modellzugriff.
@@ -76,11 +73,24 @@ def get_project_attributes(doc: AllplanEleAdapter.DocumentAdapter,
     return result
 
 
+def _drawing_file_name(number: int) -> str:
+    """Teilbildname wie in den offiziellen Beispielen
+    DrawingFileDataInteractor.py und PaletteExamples/BasicControls/RadioButtons.py
+    (DocumentNameService.GetDocumentNameByFileNumber).
+    """
+
+    try:
+        return str(AllplanEleAdapter.DocumentNameService.GetDocumentNameByFileNumber(
+            int(number), False, False, ""))
+    except Exception:
+        return ""
+
+
 def get_drawing_files() -> list[dict]:
     """Geladene Teilbilder wie im offiziellen Beispiel InteractorExamples/DrawingFileDataInteractor.py.
 
-    GetFileState() liefert (Teilbildnummer, DrawingFileLoadState); ein
-    dokumentierter Namensabruf existiert nicht (siehe Modulkopf).
+    GetFileState() liefert (Teilbildnummer, DrawingFileLoadState);
+    Namen ueber DocumentNameService.GetDocumentNameByFileNumber.
     """
 
     # DrawingFileService().GetFileState() wie im offiziellen Beispiel
@@ -103,7 +113,9 @@ def get_drawing_files() -> list[dict]:
             mapped = "passive_background"
         else:
             mapped = "loaded"
-        result.append({"number": int(number), "name": "", "load_state": mapped})
+        result.append({"number": int(number),
+                       "name": _drawing_file_name(int(number))[:255],
+                       "load_state": mapped})
     return result
 
 

@@ -278,6 +278,12 @@ class FakeCoordInput:
     def InitNextPointInput(self, prompt) -> None:
         pass
 
+    def InitFirstElementInput(self, prompt) -> None:
+        pass
+
+    def InitFirstPointInput(self, prompt) -> None:
+        pass
+
 
 @pytest.fixture()
 def connector_factory(allplan_stubs):
