@@ -62,6 +62,11 @@
             <Value>1009</Value>
             <ValueType>Integer</ValueType>
         </Constant>
+        <Constant>
+            <Name>SEND_AI</Name>
+            <Value>1010</Value>
+            <ValueType>Integer</ValueType>
+        </Constant>
     </Constants>
 
     <Page>
@@ -210,6 +215,61 @@
                     <EventId>SYNC_SELECTION</EventId>
                     <ValueType>Button</ValueType>
                 </Parameter>
+            </Parameter>
+        </Parameter>
+
+        <Parameter>
+            <Name>AiExpander</Name>
+            <Text>KI-Assistent</Text>
+            <ValueType>Expander</ValueType>
+
+            <Parameter>
+                <Name>AiContext</Name>
+                <Text>Bereich</Text>
+                <Value>0</Value>
+                <ValueType>RadioButtonGroup</ValueType>
+
+                <Parameter>
+                    <Name>AiContextProject</Name>
+                    <Text>Aktuelles Projekt</Text>
+                    <Value>0</Value>
+                    <ValueType>RadioButton</ValueType>
+                </Parameter>
+                <Parameter>
+                    <Name>AiContextSelection</Name>
+                    <Text>Aktuelle Auswahl</Text>
+                    <Value>1</Value>
+                    <ValueType>RadioButton</ValueType>
+                </Parameter>
+            </Parameter>
+            <Parameter>
+                <Name>AiPrompt</Name>
+                <Text>Anweisung</Text>
+                <Value></Value>
+                <ValueType>Text</ValueType>
+            </Parameter>
+            <Parameter>
+                <Name>AiHintText</Name>
+                <Text>Beispiel</Text>
+                <Value>Erstelle einen Quader 8000 x 1200 x 4500</Value>
+                <ValueType>Text</ValueType>
+            </Parameter>
+            <Parameter>
+                <Name>SendAiRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>SendAiButton</Name>
+                    <Text>An KI senden</Text>
+                    <EventId>SEND_AI</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
+            </Parameter>
+            <Parameter>
+                <Name>AiReplyText</Name>
+                <Text>Antwort</Text>
+                <Value>–</Value>
+                <ValueType>Text</ValueType>
             </Parameter>
         </Parameter>
 

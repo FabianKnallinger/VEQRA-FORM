@@ -212,6 +212,7 @@ class FakeBuildEle:
     EXECUTE_COMMAND = 1007
     REJECT_COMMAND = 1008
     OPEN_WEB = 1009
+    SEND_AI = 1010
 
     def __init__(self) -> None:
         for name in ("StatusText", "ConnectionText", "ConnectorIdText",
@@ -219,8 +220,9 @@ class FakeBuildEle:
                      "ProjectIdText", "DrawingFilesText", "ElementCountText",
                      "LastSyncText", "SelectionCountText", "SelectionTypesText",
                      "PendingCountText", "NextCommandText", "WebAddressText",
-                     "WebHintText"):
+                     "WebHintText", "AiPrompt", "AiReplyText", "AiHintText"):
             setattr(self, name, FakeValue())
+        self.AiContext = FakeValue(0)
         self.script_name = "VeqraFormConnect.py"
         self.pyp_file_name = "VeqraFormConnect"
 
@@ -261,6 +263,34 @@ class FakeBridgeClient:
 
     def sync_selection(self, payload: dict) -> dict:
         return self.sync_elements(payload)
+
+    def ai_chat(self, message: str, project_id, context_mode="current_project") -> dict:
+        self.ai_requests = getattr(self, "ai_requests", [])
+        self.ai_requests.append({"message": message, "project_id": project_id,
+                                 "context_mode": context_mode})
+        if "quader" in message.lower():
+            return {
+                "ok": True, "provider": "demo",
+                "reply_text_de": "Ich erstelle einen Quaderauftrag.",
+                "context_preview": "Testkontext",
+                "proposed_commands": [{
+                    "protocol_version": "1.0",
+                    "action": "create_cuboid",
+                    "parameters": {"length_mm": 8000, "width_mm": 1200,
+                                   "height_mm": 4500, "placement_mode": "pick_point"},
+                    "requires_allplan_confirmation": True,
+                }],
+            }
+        return {"ok": True, "provider": "demo",
+                "reply_text_de": "Das habe ich nicht verstanden.",
+                "context_preview": "Testkontext", "proposed_commands": []}
+
+    def create_command(self, command: dict, project_id, source: str = "ai") -> dict:
+        self.created_commands = getattr(self, "created_commands", [])
+        self.created_commands.append(command)
+        return {"command_id": f"cmd-{len(self.created_commands)}",
+                "summary_de": f"Auftrag: {command.get('action')}",
+                "status": "pending"}
 
     def stop_heartbeat(self) -> None:
         pass

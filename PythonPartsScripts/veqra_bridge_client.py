@@ -51,6 +51,23 @@ class BridgeRequestError(Exception):
         self.message_de = message_de
 
 
+def _format_detail(detail) -> str:
+    """Formatiert FastAPI-Fehlerdetails (auch Validierungslisten) lesbar."""
+
+    if isinstance(detail, str):
+        return detail
+    if isinstance(detail, list):
+        parts = []
+        for entry in detail[:3]:
+            if isinstance(entry, dict):
+                location = ".".join(str(p) for p in entry.get("loc", [])[-2:])
+                parts.append(f"{location}: {entry.get('msg', '')}".strip(": "))
+            else:
+                parts.append(str(entry))
+        return "Die Anfrage wurde abgelehnt: " + "; ".join(parts)
+    return str(detail)
+
+
 class BridgeClient:
     """Client fuer die REST-API der VEQRA Bridge."""
 
@@ -95,7 +112,7 @@ class BridgeClient:
                 detail = json.loads(error.read().decode("utf-8")).get("detail", detail)
             except (ValueError, AttributeError):
                 pass
-            raise BridgeRequestError(error.code, str(detail)) from error
+            raise BridgeRequestError(error.code, _format_detail(detail)) from error
         except (urllib.error.URLError, OSError, TimeoutError) as error:
             self.connected = False
             raise BridgeUnreachableError() from error
@@ -210,6 +227,29 @@ class BridgeClient:
             "created_element_uuids": created_uuids or [],
             "modified_element_uuids": modified_uuids or [],
         })
+
+    # ---- KI-Assistent (laeuft komplett in der Bridge) ----
+
+    def ai_chat(self, message: str, project_id: str | None,
+                context_mode: str = "current_project") -> dict:
+        """Sendet einen Prompt an den KI-Dienst der Bridge (kein Schluessel im Plugin)."""
+
+        return self._request("POST", "/api/v1/ai/chat", {
+            "message": message,
+            "project_id": project_id,
+            "context_mode": context_mode,
+            "web_selection_uuids": [],
+        }, authenticated=False)
+
+    def create_command(self, command: dict, project_id: str | None,
+                       source: str = "ai") -> dict:
+        """Reiht einen validierten Auftrag in die Warteschlange der Bridge ein."""
+
+        return self._request("POST", "/api/v1/commands", {
+            "project_id": project_id,
+            "command": command,
+            "source": source,
+        }, authenticated=False)
 
     @property
     def queued_sync_count(self) -> int:

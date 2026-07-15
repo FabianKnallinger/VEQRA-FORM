@@ -160,6 +160,18 @@ class VeqraFormConnect(BaseInteractor):
     def _set_status(self, message: str) -> None:
         self.build_ele.StatusText.value = message
 
+    def _show_error(self, message: str) -> None:
+        """Fehler sichtbar machen: Dialogbox + Statuszeile (Details im Trace).
+
+        Die Statuszeile der Palette schneidet lange Texte ab; wichtige
+        Meldungen erscheinen deshalb zusaetzlich als Nachrichtenbox
+        (ShowMessageBox wie in offiziellen Beispielen, z. B. MWSPlacement.py).
+        """
+
+        self._set_status(message)
+        print("VEQRA FORM:", message)
+        AllplanUtil.ShowMessageBox(message, AllplanUtil.MB_OK)
+
     def _update_palette(self) -> None:
         self.palette_service.update_palette(-1, True)
 
@@ -237,16 +249,22 @@ class VeqraFormConnect(BaseInteractor):
                 self._reject_command()
             elif event_id == build_ele.OPEN_WEB:
                 self._open_web()
+            elif event_id == build_ele.SEND_AI:
+                self._send_ai_prompt()
         except veqra_bridge_client.BridgeUnreachableError:
-            self._set_status(veqra_protocol.MSG_BRIDGE_UNREACHABLE)
+            self._show_error(veqra_protocol.MSG_BRIDGE_UNREACHABLE
+                             + " Bitte VeqraBridge starten und erneut versuchen.")
         except veqra_bridge_client.BridgeRequestError as error:
-            self._set_status(error.message_de)
+            self._show_error(error.message_de)
         except veqra_protocol.CommandValidationError as error:
-            self._set_status(error.message_de)
+            self._show_error(error.message_de)
         except Exception as error:  # niemals ein roher Traceback in der Palette
-            print("VeqraFormConnect: unerwarteter Fehler bei Ereignis",
-                  event_id, ":", error)
-            self._set_status("Unerwarteter Fehler. Details stehen im Trace-Fenster.")
+            import traceback
+            print("VEQRA FORM: unerwarteter Fehler bei Ereignis", event_id)
+            traceback.print_exc()
+            self._show_error("Die Aktion ist fehlgeschlagen. "
+                             f"({type(error).__name__}) "
+                             "Details stehen im Allplan-Trace-Fenster.")
 
         self._update_palette()
 
@@ -265,20 +283,38 @@ class VeqraFormConnect(BaseInteractor):
         return self.coord_input.GetInputViewDocument()
 
     def _sync_project(self) -> None:
+        """Projektsynchronisierung; jeder Teilschritt ist einzeln abgesichert."""
+
         if not self._require_session():
             return
 
         doc = self._document()
         if doc is None:
-            self._set_status("Kein aktives Dokument (DocumentAdapter fehlt).")
+            self._show_error("Kein aktives Dokument (DocumentAdapter fehlt). "
+                             "Bitte ein Teilbild öffnen.")
             return
+
+        self._set_status("Synchronisierung läuft…")
 
         path = veqra_model_reader.get_project_path()
         project_id = veqra_protocol.project_id_from_path(path)
         self.current_project_id = project_id
+        print("VEQRA FORM: Projektscan startet, Projekt-ID", project_id)
 
         statistics = veqra_model_reader.project_scan(doc)
-        drawing_files = veqra_model_reader.get_drawing_files()
+        print("VEQRA FORM: Projektscan fertig,",
+              statistics.get("total_count", 0), "Elemente")
+
+        try:
+            drawing_files = veqra_model_reader.get_drawing_files()
+        except Exception as error:
+            print("VEQRA FORM: Teilbilder nicht lesbar:", error)
+            drawing_files = []
+
+        try:
+            allplan_version = veqra_model_reader.get_allplan_version()
+        except Exception:
+            allplan_version = ""
 
         payload = {
             "protocol_version": veqra_protocol.PROTOCOL_VERSION,
@@ -286,7 +322,7 @@ class VeqraFormConnect(BaseInteractor):
             "project_id": project_id,
             "name": veqra_model_reader.get_project_name(),
             "path_hash": veqra_protocol.hash_project_path(path),
-            "allplan_version": veqra_model_reader.get_allplan_version(),
+            "allplan_version": allplan_version,
             "machine_name": platform.node(),
             "connector_version": veqra_protocol.CONNECTOR_VERSION,
             "attributes": veqra_model_reader.get_project_attributes(doc),
@@ -299,10 +335,11 @@ class VeqraFormConnect(BaseInteractor):
         build_ele.ProjectNameText.value = payload["name"]
         build_ele.ProjectIdText.value = project_id
         build_ele.DrawingFilesText.value = ", ".join(
-            str(f["number"]) for f in drawing_files) or "–"
+            (f["name"] or str(f["number"])) for f in drawing_files) or "–"
         build_ele.ElementCountText.value = str(statistics["total_count"])
         build_ele.LastSyncText.value = result.get("synchronized_at", "–")
-        self._set_status(veqra_protocol.MSG_PROJECT_SYNCED)
+        self._set_status(veqra_protocol.MSG_PROJECT_SYNCED
+                         + f" ({statistics['total_count']} Elemente)")
 
     def _read_selection_result(self) -> None:
         """Uebernimmt die abgeschlossene Elementauswahl (wie CopyElements.py)."""
@@ -582,6 +619,64 @@ class VeqraFormConnect(BaseInteractor):
         self.active_command = None
         self.build_ele.NextCommandText.value = "–"
         self._set_status(veqra_protocol.MSG_COMMAND_REJECTED)
+
+    def _send_ai_prompt(self) -> None:
+        """KI-Assistent in der Palette: Kontext waehlen, Prompt senden.
+
+        Die KI laeuft ausschliesslich in der Bridge und darf nur die fest
+        definierten Werkzeuge vorschlagen. Vorgeschlagene Auftraege werden
+        eingereiht und erst nach „Auftrag prüfen“/„Ausführen“ ausgefuehrt.
+        """
+
+        build_ele = self.build_ele
+        prompt = str(build_ele.AiPrompt.value).strip()
+        if not prompt:
+            self._show_error("Bitte zuerst eine Anweisung in das Feld "
+                             "„Anweisung“ eintragen, z. B.: "
+                             "Erstelle einen Quader 8000 x 1200 x 4500.")
+            return
+
+        # Kontextwahl: 0 = aktuelles Projekt, 1 = aktuelle Auswahl (Bereich)
+        use_selection = int(build_ele.AiContext.value) == 1
+        context_mode = "allplan_selection" if use_selection else "current_project"
+
+        # Der gewaehlte Bereich muss synchronisiert sein, damit die KI ihn kennt
+        if self.current_project_id is None:
+            self._sync_project()
+        if use_selection:
+            if not self.selection_summaries:
+                self._show_error(veqra_protocol.MSG_NO_SELECTION
+                                 + " Bitte zuerst „Auswahl lesen“ verwenden, "
+                                 "um den Bereich festzulegen.")
+                return
+            self._sync_selection()
+
+        self._set_status("Anfrage an die KI läuft…")
+        result = self.client.ai_chat(prompt, self.current_project_id, context_mode)
+
+        reply = str(result.get("reply_text_de", ""))
+        proposed = result.get("proposed_commands", [])
+
+        queued_summaries = []
+        for command in proposed:
+            created = self.client.create_command(command, self.current_project_id)
+            queued_summaries.append(created.get("summary_de", command.get("action", "")))
+
+        build_ele.AiReplyText.value = reply[:250] if reply else "–"
+        if queued_summaries:
+            build_ele.PendingCountText.value = str(len(queued_summaries))
+            build_ele.NextCommandText.value = queued_summaries[0]
+            message = (f"KI ({result.get('provider', '')}): {reply}\n\n"
+                       f"{len(queued_summaries)} Auftrag/Aufträge eingereiht:\n- "
+                       + "\n- ".join(queued_summaries)
+                       + "\n\nWeiter mit „Auftrag prüfen“, „Vorschau“ und „Ausführen“.")
+            self._set_status("Auftrag eingereiht – bitte unter „Aufträge“ prüfen.")
+        else:
+            message = f"KI ({result.get('provider', '')}): {reply}"
+            self._set_status("Die KI hat keinen ausführbaren Auftrag vorgeschlagen.")
+
+        # Antwort vollstaendig anzeigen (die Statuszeile schneidet Text ab)
+        AllplanUtil.ShowMessageBox(message, AllplanUtil.MB_OK)
 
     def _open_web(self) -> None:
         try:

@@ -56,20 +56,31 @@ def get_project_attributes(doc: AllplanEleAdapter.DocumentAdapter,
 
     # ProjectAttributeService.GetAttributesFromCurrentProject() wie im
     # offiziellen Beispiel ServiceExamples/ProjectAttributeService.py
-    attributes = AllplanBaseEle.ProjectAttributeService.GetAttributesFromCurrentProject()
+    try:
+        attributes = AllplanBaseEle.ProjectAttributeService.GetAttributesFromCurrentProject()
+    except Exception as error:
+        print("VEQRA FORM: Projektattribute nicht lesbar:", error)
+        return []
 
     result = []
     for attribute in list(attributes)[:limit]:
-        attribute_id = int(attribute[0])
-        value = attribute[1]
-        # AttributeService.GetAttributeName wie im offiziellen Beispiel
-        # ServiceExamples/ProjectAttributeService.py
-        name = str(AllplanBaseEle.AttributeService.GetAttributeName(doc, attribute_id))
-        result.append({
-            "attribute_id": attribute_id,
-            "name": name,
-            "value": value if isinstance(value, (int, float, bool)) else str(value),
-        })
+        try:
+            attribute_id = int(attribute[0])
+            value = attribute[1]
+            # AttributeService.GetAttributeName wie im offiziellen Beispiel
+            # ServiceExamples/ProjectAttributeService.py
+            name = str(AllplanBaseEle.AttributeService.GetAttributeName(doc, attribute_id))
+            if isinstance(value, bool) or isinstance(value, (int, float)):
+                clean_value: float | bool | str = value
+            else:
+                clean_value = str(value)[:1000]
+            result.append({
+                "attribute_id": attribute_id,
+                "name": name[:255],
+                "value": clean_value,
+            })
+        except Exception:
+            continue
     return result
 
 
@@ -270,9 +281,21 @@ def project_scan(doc: AllplanEleAdapter.DocumentAdapter) -> dict:
 
     Zaehlt Elemente nach Typ und Layer und ermittelt die Bounding Box des
     dokumentiert zugaenglichen Modells. Es werden keine 3D-Netze uebertragen.
+    Schlaegt das Lesen fehl, wird eine leere Statistik mit Warnung geliefert,
+    damit die Projektsynchronisierung trotzdem moeglich bleibt.
     """
 
-    elements = select_all_elements(doc)
+    try:
+        elements = select_all_elements(doc)
+    except Exception as error:
+        print("VEQRA FORM: SelectAllElements fehlgeschlagen:", error)
+        return {
+            "total_count": 0,
+            "counts_by_type": {},
+            "counts_by_layer": {},
+            "model_bounding_box": None,
+            "warnings": ["Die Elemente des Dokuments konnten nicht gelesen werden."],
+        }
 
     counts_by_type: dict[str, int] = {}
     counts_by_layer: dict[str, int] = {}
@@ -301,11 +324,18 @@ def project_scan(doc: AllplanEleAdapter.DocumentAdapter) -> dict:
             layer_key = "unbekannt"
         counts_by_layer[layer_key] = counts_by_layer.get(layer_key, 0) + 1
 
+    try:
+        bounding_box = get_bounding_box(elements)
+    except Exception as error:
+        print("VEQRA FORM: GetMinMaxBox fehlgeschlagen:", error)
+        bounding_box = None
+        warnings.append("Die Bounding Box konnte nicht ermittelt werden.")
+
     return {
         "total_count": min(total, MAX_ELEMENTS_PER_SCAN),
         "counts_by_type": counts_by_type,
         "counts_by_layer": counts_by_layer,
-        "model_bounding_box": get_bounding_box(elements),
+        "model_bounding_box": bounding_box,
         "warnings": warnings,
     }
 
