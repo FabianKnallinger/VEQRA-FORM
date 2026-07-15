@@ -620,8 +620,22 @@ class VeqraFormConnect(BaseInteractor):
         self.build_ele.NextCommandText.value = "–"
         self._set_status(veqra_protocol.MSG_COMMAND_REJECTED)
 
+    def _read_ai_prompt(self) -> str:
+        """Liest das Eingabefeld robust (String-Control kann None liefern)."""
+
+        raw = getattr(self.build_ele.AiPrompt, "value", "")
+        return "" if raw is None else str(raw).strip()
+
+    def _read_ai_context_selection(self) -> bool:
+        """True, wenn der Bereich „Auswahl“ gewaehlt ist (sonst „Projekt“)."""
+
+        try:
+            return int(self.build_ele.AiContext.value) == 1
+        except (TypeError, ValueError):
+            return False
+
     def _send_ai_prompt(self) -> None:
-        """KI-Assistent in der Palette: Kontext waehlen, Prompt senden.
+        """KI-Assistent in der Palette: Kontext waehlen, Anweisung senden.
 
         Die KI laeuft ausschliesslich in der Bridge und darf nur die fest
         definierten Werkzeuge vorschlagen. Vorgeschlagene Auftraege werden
@@ -629,50 +643,71 @@ class VeqraFormConnect(BaseInteractor):
         """
 
         build_ele = self.build_ele
-        prompt = str(build_ele.AiPrompt.value).strip()
+
+        prompt = self._read_ai_prompt()
         if not prompt:
-            self._show_error("Bitte zuerst eine Anweisung in das Feld "
-                             "„Anweisung“ eintragen, z. B.: "
-                             "Erstelle einen Quader 8000 x 1200 x 4500.")
+            self._show_error("Bitte zuerst eine Anweisung in das Feld „Anweisung“ "
+                             "eintragen, zum Beispiel:\n\n"
+                             "Erstelle einen Quader 8000 x 1200 x 4500")
             return
 
-        # Kontextwahl: 0 = aktuelles Projekt, 1 = aktuelle Auswahl (Bereich)
-        use_selection = int(build_ele.AiContext.value) == 1
+        if not self._require_session():
+            return
+
+        use_selection = self._read_ai_context_selection()
         context_mode = "allplan_selection" if use_selection else "current_project"
 
         # Der gewaehlte Bereich muss synchronisiert sein, damit die KI ihn kennt
         if self.current_project_id is None:
             self._sync_project()
+        if self.current_project_id is None:
+            return  # _sync_project hat den Fehler bereits angezeigt
+
         if use_selection:
             if not self.selection_summaries:
                 self._show_error(veqra_protocol.MSG_NO_SELECTION
-                                 + " Bitte zuerst „Auswahl lesen“ verwenden, "
-                                 "um den Bereich festzulegen.")
+                                 + "\n\nBitte zuerst im Bereich „Auswahl“ die "
+                                 "Schaltfläche „Auswahl lesen“ verwenden und "
+                                 "Elemente im Zeichenbereich wählen.")
                 return
             self._sync_selection()
 
         self._set_status("Anfrage an die KI läuft…")
         result = self.client.ai_chat(prompt, self.current_project_id, context_mode)
 
-        reply = str(result.get("reply_text_de", ""))
-        proposed = result.get("proposed_commands", [])
+        reply = str(result.get("reply_text_de", "")) or "Keine Antwort erhalten."
+        proposed = result.get("proposed_commands", []) or []
 
         queued_summaries = []
         for command in proposed:
-            created = self.client.create_command(command, self.current_project_id)
-            queued_summaries.append(created.get("summary_de", command.get("action", "")))
+            try:
+                created = self.client.create_command(command, self.current_project_id)
+                queued_summaries.append(
+                    created.get("summary_de", command.get("action", "")))
+            except veqra_bridge_client.BridgeRequestError as error:
+                print("VEQRA FORM: Auftrag konnte nicht eingereiht werden:",
+                      error.message_de)
 
-        build_ele.AiReplyText.value = reply[:250] if reply else "–"
+        build_ele.AiReplyText.value = reply[:250]
+
         if queued_summaries:
             build_ele.PendingCountText.value = str(len(queued_summaries))
             build_ele.NextCommandText.value = queued_summaries[0]
-            message = (f"KI ({result.get('provider', '')}): {reply}\n\n"
-                       f"{len(queued_summaries)} Auftrag/Aufträge eingereiht:\n- "
+            build_ele.AiPrompt.value = ""  # Feld nach Erfolg leeren
+            message = (f"{reply}\n\n"
+                       f"Eingereiht ({len(queued_summaries)}):\n- "
                        + "\n- ".join(queued_summaries)
-                       + "\n\nWeiter mit „Auftrag prüfen“, „Vorschau“ und „Ausführen“.")
-            self._set_status("Auftrag eingereiht – bitte unter „Aufträge“ prüfen.")
+                       + "\n\nWeiter im Bereich „Aufträge“: „Auftrag prüfen“ → "
+                       "„Vorschau“ → „Ausführen“.")
+            self._set_status(f"{len(queued_summaries)} Auftrag/Aufträge eingereiht "
+                             "– Bereich „Aufträge“.")
         else:
-            message = f"KI ({result.get('provider', '')}): {reply}"
+            message = (f"{reply}\n\nEs wurde kein ausführbarer Auftrag erkannt. "
+                       "Beispiele:\n"
+                       "- Erstelle einen Quader 8000 x 1200 x 4500\n"
+                       "- Verschiebe die Auswahl um 250 mm in z\n"
+                       "- Setze Attribut 508 auf Beton\n"
+                       "- Projekt analysieren")
             self._set_status("Die KI hat keinen ausführbaren Auftrag vorgeschlagen.")
 
         # Antwort vollstaendig anzeigen (die Statuszeile schneidet Text ab)

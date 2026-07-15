@@ -4,9 +4,8 @@
 
     Aufbau nach den offiziellen Allplan 2025 Beispielen:
     - StartPythonDebug.pyp aus dem PythonPart SDK (<Interactor>True</Interactor>, Constants)
-    - PaletteExamples/ButtonControls/Buttons.pyp
-      (Button mit EventId, eingebettet in einen Row-Container)
-    - SelectionExamples (Text-Parameter als Statusanzeige)
+    - PaletteExamples/ButtonControls/Buttons.pyp (Button in Row-Container mit EventId)
+    - PaletteExamples/BasicControls/EditControls.pyp (String = editierbares Eingabefeld)
 -->
 <Element>
     <Script>
@@ -78,13 +77,77 @@
             <Text>Aus Anweisung wird Geometrie.</Text>
             <Value></Value>
             <ValueType>Text</ValueType>
+            <FontStyle>2</FontStyle>
         </Parameter>
 
         <Parameter>
             <Name>StatusText</Name>
-            <Text>Meldung</Text>
+            <Text>Status</Text>
             <Value>Bereit.</Value>
             <ValueType>Text</ValueType>
+            <FontStyle>1</FontStyle>
+        </Parameter>
+
+        <Parameter>
+            <Name>SeparatorStatus</Name>
+            <Text></Text>
+            <Value></Value>
+            <ValueType>Separator</ValueType>
+        </Parameter>
+
+        <Parameter>
+            <Name>AiExpander</Name>
+            <Text>KI-Assistent</Text>
+            <ValueType>Expander</ValueType>
+
+            <Parameter>
+                <Name>AiInfoText</Name>
+                <Text>Anweisung eingeben und „An KI senden“ wählen.</Text>
+                <Value></Value>
+                <ValueType>Text</ValueType>
+            </Parameter>
+            <Parameter>
+                <Name>AiContext</Name>
+                <Text>Bereich</Text>
+                <Value>0</Value>
+                <ValueType>RadioButtonGroup</ValueType>
+
+                <Parameter>
+                    <Name>AiContextProject</Name>
+                    <Text>Projekt</Text>
+                    <Value>0</Value>
+                    <ValueType>RadioButton</ValueType>
+                </Parameter>
+                <Parameter>
+                    <Name>AiContextSelection</Name>
+                    <Text>Auswahl</Text>
+                    <Value>1</Value>
+                    <ValueType>RadioButton</ValueType>
+                </Parameter>
+            </Parameter>
+            <Parameter>
+                <Name>AiPrompt</Name>
+                <Text>Anweisung</Text>
+                <Value></Value>
+                <ValueType>String</ValueType>
+            </Parameter>
+            <Parameter>
+                <Name>SendAiRow</Name>
+                <Text> </Text>
+                <ValueType>Row</ValueType>
+                <Parameter>
+                    <Name>SendAiButton</Name>
+                    <Text>An KI senden</Text>
+                    <EventId>SEND_AI</EventId>
+                    <ValueType>Button</ValueType>
+                </Parameter>
+            </Parameter>
+            <Parameter>
+                <Name>AiReplyText</Name>
+                <Text>Antwort</Text>
+                <Value>–</Value>
+                <ValueType>Text</ValueType>
+            </Parameter>
         </Parameter>
 
         <Parameter>
@@ -94,27 +157,27 @@
 
             <Parameter>
                 <Name>ConnectionText</Name>
-                <Text>Status Bridge-Dienst</Text>
+                <Text>Bridge</Text>
                 <Value>Unbekannt</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>ConnectorIdText</Name>
-                <Text>Connector-ID</Text>
+                <Text>Connector</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>LastContactText</Name>
-                <Text>Letzter Kontakt</Text>
+                <Text>Kontakt</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>PairingToken</Name>
-                <Text>Pairing-Token</Text>
+                <Text>Token</Text>
                 <Value></Value>
-                <ValueType>Text</ValueType>
+                <ValueType>String</ValueType>
             </Parameter>
             <Parameter>
                 <Name>CheckConnectionRow</Name>
@@ -136,31 +199,31 @@
 
             <Parameter>
                 <Name>ProjectNameText</Name>
-                <Text>Projektname</Text>
+                <Text>Name</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>ProjectIdText</Name>
-                <Text>Projektkennung</Text>
+                <Text>Kennung</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>DrawingFilesText</Name>
-                <Text>Aktive Teilbilder</Text>
+                <Text>Teilbilder</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>ElementCountText</Name>
-                <Text>Synchronisierte Elemente</Text>
+                <Text>Elemente</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>LastSyncText</Name>
-                <Text>Letzte Synchronisierung</Text>
+                <Text>Letzte Sync.</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
@@ -184,13 +247,13 @@
 
             <Parameter>
                 <Name>SelectionCountText</Name>
-                <Text>Ausgewählte Elemente</Text>
+                <Text>Anzahl</Text>
                 <Value>0</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>SelectionTypesText</Name>
-                <Text>Erkannte Typen</Text>
+                <Text>Typen</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
@@ -219,74 +282,19 @@
         </Parameter>
 
         <Parameter>
-            <Name>AiExpander</Name>
-            <Text>KI-Assistent</Text>
-            <ValueType>Expander</ValueType>
-
-            <Parameter>
-                <Name>AiContext</Name>
-                <Text>Bereich</Text>
-                <Value>0</Value>
-                <ValueType>RadioButtonGroup</ValueType>
-
-                <Parameter>
-                    <Name>AiContextProject</Name>
-                    <Text>Aktuelles Projekt</Text>
-                    <Value>0</Value>
-                    <ValueType>RadioButton</ValueType>
-                </Parameter>
-                <Parameter>
-                    <Name>AiContextSelection</Name>
-                    <Text>Aktuelle Auswahl</Text>
-                    <Value>1</Value>
-                    <ValueType>RadioButton</ValueType>
-                </Parameter>
-            </Parameter>
-            <Parameter>
-                <Name>AiPrompt</Name>
-                <Text>Anweisung</Text>
-                <Value></Value>
-                <ValueType>Text</ValueType>
-            </Parameter>
-            <Parameter>
-                <Name>AiHintText</Name>
-                <Text>Beispiel</Text>
-                <Value>Erstelle einen Quader 8000 x 1200 x 4500</Value>
-                <ValueType>Text</ValueType>
-            </Parameter>
-            <Parameter>
-                <Name>SendAiRow</Name>
-                <Text> </Text>
-                <ValueType>Row</ValueType>
-                <Parameter>
-                    <Name>SendAiButton</Name>
-                    <Text>An KI senden</Text>
-                    <EventId>SEND_AI</EventId>
-                    <ValueType>Button</ValueType>
-                </Parameter>
-            </Parameter>
-            <Parameter>
-                <Name>AiReplyText</Name>
-                <Text>Antwort</Text>
-                <Value>–</Value>
-                <ValueType>Text</ValueType>
-            </Parameter>
-        </Parameter>
-
-        <Parameter>
             <Name>CommandsExpander</Name>
             <Text>Aufträge</Text>
             <ValueType>Expander</ValueType>
 
             <Parameter>
                 <Name>PendingCountText</Name>
-                <Text>Ausstehende Aufträge</Text>
+                <Text>Offen</Text>
                 <Value>0</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
             <Parameter>
                 <Name>NextCommandText</Name>
-                <Text>Nächster Auftrag</Text>
+                <Text>Nächster</Text>
                 <Value>–</Value>
                 <ValueType>Text</ValueType>
             </Parameter>
@@ -302,7 +310,7 @@
                 </Parameter>
             </Parameter>
             <Parameter>
-                <Name>PreviewCommandRow</Name>
+                <Name>PreviewExecuteRow</Name>
                 <Text> </Text>
                 <ValueType>Row</ValueType>
                 <Parameter>
@@ -311,11 +319,6 @@
                     <EventId>PREVIEW_COMMAND</EventId>
                     <ValueType>Button</ValueType>
                 </Parameter>
-            </Parameter>
-            <Parameter>
-                <Name>ExecuteCommandRow</Name>
-                <Text> </Text>
-                <ValueType>Row</ValueType>
                 <Parameter>
                     <Name>ExecuteCommandButton</Name>
                     <Text>Ausführen</Text>
@@ -343,7 +346,7 @@
 
             <Parameter>
                 <Name>WebAddressText</Name>
-                <Text>Lokale Webadresse</Text>
+                <Text>Adresse</Text>
                 <Value>http://127.0.0.1:8899</Value>
                 <ValueType>Text</ValueType>
             </Parameter>

@@ -140,14 +140,16 @@ KI-Assistent den kompakten Kontext an, der übertragen wird.
 
 ## 9a. KI direkt in der Allplan-Palette
 
-Das Werkzeug **VEQRA Verbindung** enthält einen eigenen Bereich
-**KI-Assistent**: Bereich wählen („Aktuelles Projekt“ oder „Aktuelle
-Auswahl“ – vorher mit „Auswahl lesen“ festlegen), Anweisung eintragen
-(z. B. „Erstelle einen Quader 8000 x 1200 x 4500“) und **„An KI senden“**
-wählen. Vorgeschlagene Aufträge werden eingereiht und wie gewohnt über
-„Auftrag prüfen“ → „Vorschau“ → „Ausführen“ bestätigt. Unterstützt sind
-die MVP-Befehle (Quader, Verschieben, Attribute, Analyse/Synchronisierung);
-andere Anweisungen beantwortet die KI mit einem Hinweis.
+Ganz oben in der Palette **VEQRA Verbindung** liegt der Bereich
+**KI-Assistent**: Bereich wählen (**Projekt** oder **Auswahl** – für
+„Auswahl“ vorher „Auswahl lesen“ verwenden), in das **editierbare Feld
+„Anweisung“** einen Text eingeben (z. B. „Erstelle einen Quader
+8000 x 1200 x 4500“) und **„An KI senden“** wählen. Die KI-Antwort
+erscheint als Dialog; vorgeschlagene Aufträge werden eingereiht und wie
+gewohnt über „Auftrag prüfen“ → „Vorschau“ → „Ausführen“ bestätigt.
+Unterstützt sind die MVP-Befehle (Quader, Verschieben, Attribute,
+Analyse/Synchronisierung); andere Anweisungen beantwortet die KI mit
+einem Hinweis.
 
 ## 10. Ersten Webauftrag erstellen
 
