@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veqra.local/schemas/element.schema.json",
+  "title": "VEQRA FORM Elementzusammenfassung",
+  "description": "Strukturierte Zusammenfassung eines Allplan-Modellelements. Keine hochaufloesenden 3D-Netze im MVP.",
+  "type": "object",
+  "required": ["element_uuid", "element_type"],
+  "additionalProperties": false,
+  "properties": {
+    "element_uuid": { "type": "string", "maxLength": 64 },
+    "model_element_uuid": { "type": ["string", "null"], "maxLength": 64 },
+    "element_type": { "type": "string", "maxLength": 128 },
+    "element_subtype": { "type": ["string", "null"], "maxLength": 128 },
+    "display_name": { "type": ["string", "null"], "maxLength": 255 },
+    "layer_id": { "type": ["integer", "null"] },
+    "layer_name": { "type": ["string", "null"], "maxLength": 255 },
+    "drawing_file_number": { "type": ["integer", "null"] },
+    "format_properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pen": { "type": ["integer", "null"] },
+        "stroke": { "type": ["integer", "null"] },
+        "color": { "type": ["integer", "null"] },
+        "pen_by_layer": { "type": ["boolean", "null"] },
+        "stroke_by_layer": { "type": ["boolean", "null"] },
+        "color_by_layer": { "type": ["boolean", "null"] },
+        "help_construction": { "type": ["boolean", "null"] }
+      }
+    },
+    "attributes": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": ["attribute_id", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "attribute_id": { "type": "integer" },
+          "name": { "type": ["string", "null"], "maxLength": 255 },
+          "value": { "type": ["string", "number", "boolean", "null"] }
+        }
+      }
+    },
+    "geometry_kind": { "type": ["string", "null"], "maxLength": 64 },
+    "geometry_summary": { "type": ["string", "null"], "maxLength": 2000 },
+    "is_3d": { "type": ["boolean", "null"] },
+    "bounding_box": { "$ref": "#/$defs/bounding_box" },
+    "center": { "$ref": "#/$defs/point" },
+    "parent_uuid": { "type": ["string", "null"], "maxLength": 64 },
+    "child_uuids": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "maxItems": 1000 },
+    "is_modifiable": { "type": ["boolean", "null"] },
+    "synchronized_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "point": {
+      "type": ["object", "null"],
+      "required": ["x", "y", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      }
+    },
+    "bounding_box": {
+      "type": ["object", "null"],
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/$defs/point" },
+        "max": { "$ref": "#/$defs/point" }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 EXCLUDED_DIRS = {".git", ".venv", "_external", "_legacy", "dist",
-                 "__pycache__", ".pytest_cache", ".ruff_cache"}
+                 "__pycache__", ".pytest_cache", ".ruff_cache", "node_modules"}
 
 SCANNED_SUFFIXES = {".py", ".pyp", ".yml", ".yaml", ".toml", ".ini",
                     ".cfg", ".md", ".in", ".json", ".deu"}

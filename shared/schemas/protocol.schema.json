@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veqra.local/schemas/protocol.schema.json",
+  "title": "VEQRA FORM Protokoll-Umschlag",
+  "description": "Gemeinsamer Nachrichtenumschlag zwischen Allplan-Plugin, VEQRA Bridge und Weboberflaeche. Protokollversion 1.0.",
+  "type": "object",
+  "required": [
+    "protocol_version",
+    "message_id",
+    "timestamp",
+    "connector_id",
+    "project_id",
+    "message_type",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "message_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "connector_id": {
+      "type": ["string", "null"],
+      "maxLength": 128
+    },
+    "project_id": {
+      "type": ["string", "null"],
+      "maxLength": 128
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "connector_register",
+        "connector_heartbeat",
+        "project_sync",
+        "selection_sync",
+        "elements_sync",
+        "command",
+        "command_status",
+        "command_result",
+        "activity",
+        "error"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

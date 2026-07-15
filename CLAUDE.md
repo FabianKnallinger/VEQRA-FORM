@@ -26,9 +26,19 @@ Verbindliche Regeln für alle Arbeiten in diesem Repository:
 
 Zusätzlich gilt:
 
-- Allplan-Importe liegen ausschließlich in der Adapter-Schicht
-  (`PythonPartsScripts/VeqraFormCuboid.py`).
-- Kein `eval`, kein `exec`, keine Zugangsdaten im Repository.
+- Allplan-Importe liegen ausschließlich in der Adapter-Schicht des Plugins
+  (`PythonPartsScripts/VeqraFormCuboid.py`, `VeqraFormConnect.py`,
+  `veqra_model_reader.py`). Bridge und Web sind ohne Allplan startbar
+  und testbar.
+- Kein `eval`, kein `exec`, keine Shell-Ausführung aus Nutzereingaben,
+  kein Löschen von Elementen, keine Zugangsdaten im Repository.
+- Kein Befehl aus dem Web wird ohne aktive Bestätigung in Allplan
+  ausgeführt.
+- Die Bridge ist ausschließlich über 127.0.0.1 erreichbar; API-Schlüssel
+  werden nur in der Bridge gelesen (ANTHROPIC_API_KEY, VEQRA_FORM_MODEL)
+  und niemals geloggt.
+- Zentrale Versionsnummern stehen in `shared/VERSION.json`
+  (Protokollversion 1.0) und werden durch Tests abgeglichen.
 - Die Plugin-UUID in `install-config.yml` wurde einmalig generiert und darf
   niemals neu erzeugt werden.
 - Beim Start des Plugins erfolgt keine Modelländerung; Geometrie entsteht

@@ -11,7 +11,7 @@
 plugin:
   name: VEQRA FORM
   UUID: 1a53ccd6-1076-4ac9-8949-168e8d7a7b7f
-  version: 0.1.0
+  version: 0.2.0
   developer: veqra
   default-language: de
   min-allplan-version: 2025
@@ -36,6 +36,15 @@ tools:
       small: VeqraFormCuboid_24.png
       large: VeqraFormCuboid_128.png
 
+  - id: veqra-form-connect
+    pyp: VeqraFormConnect.pyp
+    display-name:
+      de: VEQRA Verbindung
+      en: VEQRA connection
+    icons:
+      small: VeqraFormConnect_24.png
+      large: VeqraFormConnect_128.png
+
 # Erzeugt einen eigenen Bereich "VEQRA FORM" im Reiter "Plug-ins"
 # (Doku 2025: "The installer can create one task area for each plugin
 # inside the Plug-ins tab in ALLPLAN.")
@@ -45,3 +54,4 @@ task-area:
     en: VEQRA FORM
   layout:
     - veqra-form-cuboid
+    - veqra-form-connect

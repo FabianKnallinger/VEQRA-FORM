@@ -16,7 +16,7 @@ def test_plugin_metadata(install_config: dict) -> None:
     plugin = install_config["plugin"]
 
     assert plugin["name"] == "VEQRA FORM"
-    assert plugin["version"] == "0.1.0"
+    assert plugin["version"] == "0.2.0"
     assert plugin["developer"] == "veqra"
     assert plugin["default-language"] == "de"
     assert plugin["min-allplan-version"] == 2025
@@ -48,22 +48,24 @@ def test_installation_section(install_config: dict, repo_root: Path) -> None:
 
 def test_tool_registration(install_config: dict, repo_root: Path) -> None:
     tools = install_config["tools"]
-    assert len(tools) == 1
+    assert len(tools) == 2
 
-    tool = tools[0]
-    assert tool["id"] == "veqra-form-cuboid"
-    assert tool["pyp"] == "VeqraFormCuboid.pyp"
-    assert "de" in tool["display-name"]
+    tool_ids = [tool["id"] for tool in tools]
+    assert tool_ids == ["veqra-form-cuboid", "veqra-form-connect"]
+    assert tools[0]["pyp"] == "VeqraFormCuboid.pyp"
+    assert tools[1]["pyp"] == "VeqraFormConnect.pyp"
 
     # Referenzierte Dateien: Pfade relativ zu den zugeordneten Ordnern
     installation = install_config["installation"]
     library_dir = repo_root / installation["Library"]
     actionbar_dir = repo_root / installation["PythonPartsActionbar"]
 
-    assert (library_dir / tool["pyp"].replace("\\", "/")).is_file()
-    for icon in tool["icons"].values():
-        assert (actionbar_dir / icon.replace("\\", "/")).is_file(), \
-            f"Referenziertes Icon fehlt: {icon}"
+    for tool in tools:
+        assert "de" in tool["display-name"]
+        assert (library_dir / tool["pyp"].replace("\\", "/")).is_file()
+        for icon in tool["icons"].values():
+            assert (actionbar_dir / icon.replace("\\", "/")).is_file(), \
+                f"Referenziertes Icon fehlt: {icon}"
 
 
 def test_task_area_matches_tools(install_config: dict) -> None:

@@ -1,0 +1,91 @@
+name: Build Windows Bridge
+
+# Baut VeqraBridge.exe mit PyInstaller unter windows-latest.
+# Hinweis: Die EXE wird im CI gebaut, aber nicht im Linux-Codespace getestet;
+# der Funktionstest erfolgt manuell unter Windows.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python installieren
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Node installieren
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Abhaengigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r bridge/requirements.txt pyinstaller
+
+      - name: Weboberflaeche bauen
+        run: |
+          cd web
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: VeqraBridge.exe bauen
+        run: |
+          cd bridge
+          pyinstaller --onefile --name VeqraBridge `
+            --collect-all uvicorn `
+            --collect-all fastapi `
+            --collect-all pydantic `
+            run_bridge.py
+
+      - name: Windows-Paket zusammenstellen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path package/webui -Force | Out-Null
+          Copy-Item bridge/dist/VeqraBridge.exe package/
+          Copy-Item -Recurse web/dist/* package/webui/
+          Copy-Item shared -Destination package/shared -Recurse
+          Set-Content -Path package/LIESMICH.txt -Encoding UTF8 -Value @'
+          VEQRA Bridge fuer Windows
+          =========================
+          1. VeqraBridge.exe starten (nur lokal erreichbar: http://127.0.0.1:8899)
+          2. Der Pairing-Token liegt nach dem ersten Start in
+             %USERPROFILE%\.veqra-form\pairing-token.txt
+          3. Die Weboberflaeche oeffnet sich im Browser unter http://127.0.0.1:8899
+          4. KI-Konfiguration ueber Umgebungsvariablen:
+             VEQRA_AI_PROVIDER=demo oder anthropic
+             ANTHROPIC_API_KEY=... (nur bei anthropic)
+             VEQRA_FORM_MODEL=... (nur bei anthropic, kein Standardwert)
+          '@
+          Compress-Archive -Path package/* -DestinationPath veqra-bridge-windows.zip
+
+      - name: VeqraBridge.exe als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: VeqraBridge-exe
+          path: bridge/dist/VeqraBridge.exe
+          if-no-files-found: error
+
+      - name: Windows-Paket als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: veqra-bridge-windows
+          path: veqra-bridge-windows.zip
+          if-no-files-found: error
+
+      - name: An GitHub Release anhaengen (nur bei Versions-Tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: veqra-bridge-windows.zip

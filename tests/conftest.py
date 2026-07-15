@@ -11,8 +11,10 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# constants.py ist bewusst Allplan-frei und direkt importierbar
+# constants.py, veqra_protocol.py und veqra_bridge_client.py sind bewusst
+# Allplan-frei und direkt importierbar; die Bridge liegt unter bridge/
 sys.path.insert(0, str(REPO_ROOT / "PythonPartsScripts"))
+sys.path.insert(0, str(REPO_ROOT / "bridge"))
 
 PYP_FILE = REPO_ROOT / "Library" / "VeqraFormCuboid.pyp"
 SCRIPT_FILE = REPO_ROOT / "PythonPartsScripts" / "VeqraFormCuboid.py"

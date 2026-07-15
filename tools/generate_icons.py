@@ -6,7 +6,10 @@ im offiziellen PythonPart SDK Paket):
 
 - PythonPartsActionbar/VeqraFormCuboid_24.png
 - PythonPartsActionbar/VeqraFormCuboid_128.png
+- PythonPartsActionbar/VeqraFormConnect_24.png
+- PythonPartsActionbar/VeqraFormConnect_128.png
 - Library/VeqraFormCuboid.png (Vorschaubild in der Bibliothek)
+- Library/VeqraFormConnect.png (Vorschaubild in der Bibliothek)
 """
 
 from __future__ import annotations
@@ -63,18 +66,43 @@ def _draw_cuboid(size: int, dark: bool) -> Image.Image:
     return img.resize((size, size), Image.LANCZOS)
 
 
+def _draw_connect(size: int, dark: bool) -> Image.Image:
+    """Quader mit Verbindungslinie und Knotenpunkten (Verbindungswerkzeug)."""
+
+    img = _draw_cuboid(size, dark)
+    scale = 4
+    px = size * scale
+    overlay = img.resize((px, px), Image.NEAREST)
+    draw = ImageDraw.Draw(overlay)
+
+    line = DARK_LINE if dark else LIGHT_LINE
+    node = (46, 158, 91, 255)
+
+    y = px * 0.82
+    draw.line([(px * 0.10, y), (px * 0.90, y)], fill=line, width=max(scale, px // 28))
+    radius = px * 0.075
+    for x in (px * 0.14, px * 0.86):
+        draw.ellipse([x - radius, y - radius, x + radius, y + radius],
+                     fill=node, outline=line)
+
+    return overlay.resize((size, size), Image.LANCZOS)
+
+
 def main() -> None:
     ACTIONBAR_DIR.mkdir(parents=True, exist_ok=True)
     LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
 
     targets = [
-        (ACTIONBAR_DIR / "VeqraFormCuboid_24.png", 24, False),
-        (ACTIONBAR_DIR / "VeqraFormCuboid_128.png", 128, False),
-        (LIBRARY_DIR / "VeqraFormCuboid.png", 128, False),
+        (ACTIONBAR_DIR / "VeqraFormCuboid_24.png", 24, False, _draw_cuboid),
+        (ACTIONBAR_DIR / "VeqraFormCuboid_128.png", 128, False, _draw_cuboid),
+        (ACTIONBAR_DIR / "VeqraFormConnect_24.png", 24, False, _draw_connect),
+        (ACTIONBAR_DIR / "VeqraFormConnect_128.png", 128, False, _draw_connect),
+        (LIBRARY_DIR / "VeqraFormCuboid.png", 128, False, _draw_cuboid),
+        (LIBRARY_DIR / "VeqraFormConnect.png", 128, False, _draw_connect),
     ]
 
-    for path, size, dark in targets:
-        _draw_cuboid(size, dark).save(path, format="PNG")
+    for path, size, dark, painter in targets:
+        painter(size, dark).save(path, format="PNG")
         print(f"erzeugt: {path.relative_to(REPO_ROOT)}")
 
 

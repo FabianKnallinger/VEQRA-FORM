@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Node installieren
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Entwicklungsabhaengigkeiten installieren
         run: |
           python -m pip install --upgrade pip
@@ -27,6 +32,12 @@ jobs:
 
       - name: Icons erzeugen
         run: python tools/generate_icons.py
+
+      - name: Weboberflaeche bauen
+        run: |
+          cd web
+          npm install --no-audit --no-fund
+          npm run build
 
       - name: Tests ausfuehren
         run: python -m pytest
@@ -37,6 +48,9 @@ jobs:
       - name: Paket validieren
         run: python tools/validate_allep.py
 
+      - name: Bridge-Quellpaket bauen
+        run: python tools/build_bridge_source.py
+
       - name: ALLEP als Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
@@ -44,8 +58,17 @@ jobs:
           path: dist/VeqraForm.allep
           if-no-files-found: error
 
+      - name: Bridge-Quellpaket als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: veqra-bridge-source
+          path: dist/veqra-bridge-source.zip
+          if-no-files-found: error
+
       - name: An GitHub Release anhaengen (nur bei Versions-Tags)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/VeqraForm.allep
+          files: |
+            dist/VeqraForm.allep
+            dist/veqra-bridge-source.zip

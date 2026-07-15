@@ -84,6 +84,10 @@ def test_all_referenced_files_in_archive(allep_path: Path) -> None:
         # Vollstaendige Laufzeitdateien der Skript-Schicht
         assert "PythonPartsScripts/VeqraFormCuboid.py" in names
         assert "PythonPartsScripts/constants.py" in names
+        assert "PythonPartsScripts/VeqraFormConnect.py" in names
+        assert "PythonPartsScripts/veqra_protocol.py" in names
+        assert "PythonPartsScripts/veqra_bridge_client.py" in names
+        assert "PythonPartsScripts/veqra_model_reader.py" in names
 
 
 def test_no_cache_files_in_archive(allep_path: Path) -> None:

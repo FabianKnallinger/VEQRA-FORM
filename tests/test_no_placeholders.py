@@ -6,7 +6,8 @@ import ast
 from pathlib import Path
 
 EXCLUDED_DIRS = {".git", ".venv", "_external", "_legacy", "dist",
-                 "__pycache__", ".pytest_cache", ".ruff_cache", "tests"}
+                 "__pycache__", ".pytest_cache", ".ruff_cache", "tests",
+                 "node_modules"}
 
 # Zusammengesetzt, damit diese Testdatei sich nicht selbst meldet
 FORBIDDEN_MARKERS = [

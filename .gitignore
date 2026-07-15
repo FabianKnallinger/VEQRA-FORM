@@ -12,7 +12,14 @@ venv/
 
 # Build-Artefakte
 dist/*.allep
+dist/*.zip
 build/
+web/dist/
+web/node_modules/
+bridge/.venv-bridge/
+bridge/build/
+bridge/dist/
+*.spec
 
 # Externe Referenzen und Altbestand (nur lokal)
 _external/

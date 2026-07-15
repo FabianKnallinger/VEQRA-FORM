@@ -2,142 +2,266 @@
 
 **Aus Anweisung wird Geometrie.**
 
-VEQRA FORM ist eine Erweiterung für Allplan (ab Version 2025), mit der später
-Modellierungsbefehle über natürliche Sprache ausgeführt werden können. Diese erste
-Version enthält ausschließlich das technisch funktionierende Grundsystem.
+VEQRA FORM verbindet Allplan mit einer lokalen Bridge, einer modernen
+Weboberfläche und einer KI-Schnittstelle. Modellbefehle aus der Weboberfläche
+werden als strukturierte Aufträge an Allplan gesendet und dort **erst nach
+Prüfung, Vorschau und aktiver Bestätigung** ausgeführt.
 
-## Funktionsumfang dieser ersten Version
+## Schnellstart (Windows mit Allplan)
 
-- Installation per Drag-and-Drop einer ALLEP-Datei in Allplan (ab 2025)
-- Eigener Bereich **VEQRA FORM** im Reiter **Plug-ins** mit eigenem Icon
-- Allplan-Palette mit Eingabefeldern für **Länge**, **Breite**, **Höhe** (intern in Millimetern)
-- Standardwerte: Länge 8000 mm, Breite 1200 mm, Höhe 4500 mm
-- Wahl eines Einfügepunkts im Zeichenbereich mit Vorschau des Quaders am Fadenkreuz
-- Erzeugung eines echten Allplan-3D-Körpers (`Polyhedron3D`) nach Bestätigung
-- Abbrechen mit ESC ohne Modelländerung, Entfernen über die normale Rückgängig-Funktion
+1. **`VeqraBridge.exe`** starten (aus dem GitHub-Actions-Paket
+   `veqra-bridge-windows.zip`; alternativ `bridge\run_windows.bat` aus
+   `veqra-bridge-source.zip`, benötigt Python). Die Weboberfläche öffnet
+   sich automatisch im Browser.
+2. **`VeqraForm.allep`** per Drag-and-Drop in Allplan ziehen und
+   Installation bestätigen.
+3. In Allplan: Reiter **Plug-ins → VEQRA FORM → VEQRA Verbindung** →
+   **„Verbindung prüfen“**. Der Pairing-Token wird automatisch gelesen –
+   Status „Verbunden“. Fertig.
 
-Technische Grundlage ist ein Standard-PythonPart nach dem offiziellen Allplan-Beispiel
-`GeometryExamples/BasicSolids/Cuboid` aus dem Repository
-[NemetschekAllplan/PythonPartsExamples](https://github.com/NemetschekAllplan/PythonPartsExamples)
-(Branch 2025) sowie die offizielle
-[ALLEP-Paketierungsdokumentation für Allplan 2025](https://pythonparts.allplan.com/2025/manual/for_developer/allep/)
-und das offizielle PythonPart-SDK-Paket als Strukturvorlage.
+## 1. Systemarchitektur
 
-## Codespace starten
+```
+Allplan Plugin  ──HTTP/127.0.0.1──►  VEQRA Bridge  ──►  Weboberfläche (Browser)
+(PythonParts)   ◄──Aufträge───────   (FastAPI+SQLite)   (React + TypeScript)
+                                          │
+                                          └──►  KI-Anbieter (Demo / Anthropic)
+```
 
-1. Auf GitHub den Button **Code → Codespaces → Create codespace on main** wählen.
-2. Der Devcontainer installiert die Entwicklungsabhängigkeiten automatisch
-   (`pip install -e '.[dev]'`).
+- Alle Komponenten laufen lokal; die Bridge ist ausschließlich über
+  **127.0.0.1** erreichbar.
+- Das gemeinsame, versionierte JSON-Protokoll (Version 1.0) liegt in
+  [shared/schemas/](shared/schemas/).
 
-## Tests ausführen
+### Rolle des Allplan-Plugins
+
+Das Plugin läuft in Allplan (PythonParts) und enthält zwei Werkzeuge:
+
+- **Quader erstellen** – das unveränderte, funktionierende Basiswerkzeug
+  (Palette, Einfügepunkt, Vorschau, Rückgängig).
+- **VEQRA Verbindung** – Kopplung mit der Bridge, Projekt-/Auswahl-
+  synchronisierung, Abruf und bestätigte Ausführung von Aufträgen.
+
+Nur das Plugin verwendet die Allplan Python API (Adapter-Schicht:
+[VeqraFormConnect.py](PythonPartsScripts/VeqraFormConnect.py),
+[veqra_model_reader.py](PythonPartsScripts/veqra_model_reader.py),
+[VeqraFormCuboid.py](PythonPartsScripts/VeqraFormCuboid.py)).
+
+### Rolle der Bridge
+
+Der lokale Dienst ([bridge/](bridge/)) übernimmt: Projektdatenbank (SQLite),
+Schnappschüsse, Elementzusammenfassungen, Befehlswarteschlange, Web- und
+Plugin-Verbindung (REST + WebSocket), KI-Kommunikation, Pairing/Sitzungen und
+das Änderungsprotokoll. OpenAPI-Doku: `http://127.0.0.1:8899/docs`.
+
+### Rolle der Weboberfläche
+
+Die Weboberfläche ([web/](web/)) zeigt Projekte, Modellstatistiken, den
+Element-Explorer, den KI-Assistenten, Aufträge und das Aktivitätsprotokoll.
+Sie wird von der Bridge ausgeliefert und spricht ausschließlich mit ihr.
+
+### Modellscan statt Bildscan
+
+VEQRA FORM wertet **niemals den Bildschirm über Bilderkennung/OCR** aus.
+Das Plugin liest strukturierte Daten über die dokumentierte Allplan Python
+API (Elementtyp, UUIDs, Layer, Formateigenschaften, Attribute, Bounding Box,
+Beziehungen). Übertragen werden kompakte Zusammenfassungen, keine 3D-Netze.
+
+## 2. Codespace-Einrichtung
+
+1. **Code → Codespaces → Create codespace on main** wählen.
+2. Der Devcontainer installiert Python- und Node-Abhängigkeiten automatisch.
+3. Alles bauen und testen: `make all`
+
+## 3. Bridge starten
 
 ```bash
-make test     # alle Tests (laufen vollständig ohne Allplan)
-make lint     # Lint-Prüfung mit ruff
+make bridge-run            # oder: cd bridge && ./run_dev.sh
 ```
 
-## ALLEP-Datei bauen
+- Läuft auf `http://127.0.0.1:8899` (nur lokal).
+- Beim ersten Start wird ein **Pairing-Token** erzeugt und unter
+  `~/.veqra-form/pairing-token.txt` abgelegt (Windows:
+  `%USERPROFILE%\.veqra-form\pairing-token.txt`).
+
+## 4. Weboberfläche starten
+
+- Produktion: von der Bridge ausgeliefert → `http://127.0.0.1:8899`
+- Entwicklung mit Hot-Reload: `cd web && npm run dev` (Proxy zur Bridge)
+- Bauen: `make web` → `web/dist/`
+
+## 5. Plugin installieren
+
+1. `make all` (oder Artifact aus GitHub Actions laden).
+2. `dist/VeqraForm.allep` per Drag-and-Drop in Allplan (ab 2025) ziehen.
+3. Im Reiter **Plug-ins** erscheint der Bereich **VEQRA FORM** mit den
+   Werkzeugen „Quader erstellen“ und „VEQRA Verbindung“.
+
+## 6. Plugin koppeln
+
+1. Bridge starten (auf demselben Windows-Rechner wie Allplan); die
+   Weboberfläche öffnet sich automatisch im Browser.
+2. In Allplan das Werkzeug **VEQRA Verbindung** öffnen.
+3. **Verbindung prüfen** wählen – das Plugin liest den Pairing-Token
+   automatisch aus `%USERPROFILE%\.veqra-form\pairing-token.txt`
+   (gleicher Rechner, gleicher Benutzer). Nur falls die Ablage nicht
+   erreichbar ist, den Token manuell in das Feld **Pairing-Token**
+   eintragen.
+4. Status „Verbunden“ mit Connector-ID erscheint; danach sendet das
+   Plugin alle 5 Sekunden einen Heartbeat.
+
+## 7. Projekt synchronisieren
+
+In der Palette **Projekt → Projekt synchronisieren** wählen. Übertragen werden
+Projektname, Projektkennung, **SHA-256-Hash des Projektpfads** (niemals der
+Klartextpfad), Allplan-Version, Projektattribute, geladene Teilbilder und die
+Elementstatistik (Anzahl nach Typ und Layer, Bounding Box, Warnungen).
+
+## 8. Auswahl synchronisieren
+
+1. **Auswahl → Auswahl lesen** wählen, Elemente im Zeichenbereich wählen und
+   bestätigen.
+2. **Auswahl synchronisieren** überträgt die Elementzusammenfassungen
+   (UUIDs, Typ, Layer, Formateigenschaften, Attribute, Bounding Box,
+   Mittelpunkt, Eltern-/Kindbeziehungen, Teilbild).
+
+## 9. KI-Modus konfigurieren
+
+Umgebungsvariablen der Bridge (vor dem Start setzen):
+
+| Variable | Bedeutung |
+| --- | --- |
+| `VEQRA_AI_PROVIDER` | `demo` (Standard, ohne Schlüssel) oder `anthropic` |
+| `ANTHROPIC_API_KEY` | API-Schlüssel; wird nur in der Bridge gelesen |
+| `VEQRA_FORM_MODEL` | Modellname; **muss** bei `anthropic` gesetzt werden (kein fest codierter Standard) |
+
+Plugin und Browser kennen niemals den API-Schlüssel. Vor dem Senden zeigt der
+KI-Assistent den kompakten Kontext an, der übertragen wird.
+
+## 10. Ersten Webauftrag erstellen
+
+1. Weboberfläche öffnen → **KI-Assistent**.
+2. Kontext wählen (z. B. „Aktuelles Projekt“).
+3. Eingeben: `Erstelle einen Quader 8000 x 1200 x 4500`.
+4. Den vorgeschlagenen Auftrag prüfen und **Auftrag einreihen** wählen
+   (Status: `pending`).
+
+## 11. Auftrag in Allplan bestätigen
+
+1. In Allplan **VEQRA Verbindung → Aufträge → Auftrag prüfen** – die deutsche
+   Zusammenfassung erscheint (Status: `awaiting_confirmation`).
+2. **Vorschau** zeigt den Quader bzw. die verschobene Auswahl an.
+3. **Ausführen** bestätigt den Auftrag; beim Quader folgt die Punkteingabe
+   mit Vorschau am Fadenkreuz.
+4. **Ablehnen** verwirft den Auftrag ohne Modelländerung.
+5. Nach der Ausführung synchronisiert das Plugin die betroffenen Elemente,
+   und die Weboberfläche zeigt den neuen Stand.
+
+Erlaubte Befehle im MVP: `inspect_project`, `inspect_selection`,
+`synchronize_project`, `synchronize_selection`, `create_cuboid`,
+`move_selected_elements`, `set_selected_attributes`.
+**Nicht erlaubt:** Löschen, freie Codeausführung, Datei- und Shell-Zugriffe.
+
+## 12. Fehlerbehebung
+
+| Meldung/Problem | Lösung |
+| --- | --- |
+| „VEQRA Bridge ist nicht erreichbar.“ | Bridge starten; Port 8899 frei? `VEQRA_BRIDGE_PORT` prüfen. |
+| „Ungültiger Pairing-Token.“ | Token neu aus `pairing-token.txt` kopieren (ohne Leerzeichen). |
+| „Die Sitzung ist abgelaufen.“ | In der Palette erneut „Verbindung prüfen“ wählen. |
+| „Der Auftrag ist abgelaufen.“ | Aufträge verfallen nach 15 Minuten; im Web neu einreihen. |
+| „Die Synchronisierung ist zu groß und wurde begrenzt.“ | Begrenzungen (10.000 Elemente, 20 MB) – Auswahl verkleinern. |
+| Werkzeug erscheint nicht | Allplan neu starten; Actionbar-Konfiguration zurücksetzen. |
+| Python-Fehler im Plugin | Allplan-Trace-Fenster prüfen; Details stehen nie in der Palette. |
+
+## 13. Sicherheitskonzept
+
+- Bridge bindet ausschließlich an **127.0.0.1**; kein offener Netzwerkport.
+- Kopplung über **einmaligen Pairing-Token** (in der DB nur als SHA-256-Hash).
+- Kurzlebige, kryptografisch zufällige **Sitzungs-Tokens**; Vergleich in
+  konstanter Zeit (`hmac.compare_digest`).
+- Begrenzte Anfragegrößen (20 MB), Rate-Limits, eingeschränkte CORS-Regeln,
+  streng validierte JSON-Schemas (Pydantic, `extra="forbid"`).
+- **Kein Befehl aus dem Web wird ohne Bestätigung in Allplan ausgeführt.**
+  Keine Modelländerung bei getrennter Verbindung, ungültigem Token,
+  abgelaufenem Auftrag, unbekannter Aktion, fehlender Auswahl oder nicht
+  plausiblen Werten. Der Auftrag wird dann abgelehnt bzw. als fehlgeschlagen
+  gemeldet.
+- API-Schlüssel stehen niemals in Logs, im Plugin oder im Browser.
+
+## 14. Datenspeicherung
+
+- SQLite-Datenbank unter `~/.veqra-form/veqra-bridge.sqlite3`
+  (Tabellen: connectors, projects, project_snapshots, drawing_files,
+  elements, element_attributes, commands, command_results, activity_logs,
+  settings; Schema-Versionierung über Migrationen).
+- Strukturierte JSON-Logs unter `~/.veqra-form/logs/`.
+- Projektpfade werden ausschließlich als SHA-256-Hash gespeichert. Eine
+  Anzeige des echten Pfads wäre nur über eine ausdrückliche Einstellung
+  möglich und ist standardmäßig aus.
+
+## 15. Bekannte Grenzen
+
+- **Teilbildnamen** sind über die dokumentierte `DrawingFileService`-API nicht
+  abrufbar; erfasst werden Nummer und Ladezustand.
+- Der Projektscan liest die Elemente des aktuellen Dokuments
+  (`ElementsSelectService.SelectAllElements`); nicht geladene Teilbilder
+  werden nicht im Hintergrund geöffnet oder gescannt.
+- Es existiert keine stabile dokumentierte Änderungserkennung in der Allplan
+  API. Deshalb: **keine erfundenen Ereignisse, kein dauerhafter Vollscan** –
+  manuelle Synchronisierung plus automatische Synchronisierung nur für
+  Änderungen, die VEQRA FORM selbst ausgeführt hat. Die Weboberfläche zeigt
+  stets den Zeitpunkt der letzten Synchronisierung.
+- `move_selected_elements` nutzt den dokumentierten Weg
+  `GetElements → ElementTransform → ModifyElements`. Laut offizieller
+  Dokumentation bleiben Elementtypen ohne interne Änderungsfunktion
+  unverändert; ein dokumentierter Sperrstatus-Abruf existiert nicht.
+- Ein dokumentierter Fortschrittsbalken für lange Scans existiert nicht;
+  verarbeitet wird in Blöcken mit Begrenzungen (10.000 Elemente, 20 MB,
+  Attribute begrenzt, Seitennavigation im Web).
+- Die Allplan-Funktionen selbst können im Codespace nicht getestet werden
+  (siehe [docs/MANUAL_ALLPLAN_TEST.md](docs/MANUAL_ALLPLAN_TEST.md)).
+
+## 16. Spätere Bimplus-Erweiterung
+
+Die Projektsynchronisierung ist bewusst als eigener Dienst gekapselt
+(`bridge/veqra_bridge/services/sync_service.py`, Schemas in
+`shared/schemas/`). Eine spätere Bimplus-Integration kann dort als
+zusätzliches Synchronisierungsziel andocken. In dieser Phase sind **keine**
+Bimplus-Aufrufe implementiert.
+
+## 17. Windows-EXE über GitHub Actions bauen
+
+1. Reiter **Actions** → Workflow **Build Windows Bridge** → **Run workflow**
+   (läuft auch bei Push auf `main` und bei `v*`-Tags, auf `windows-latest`).
+2. Artifacts herunterladen: **VeqraBridge-exe** (`VeqraBridge.exe`) und
+   **veqra-bridge-windows** (`veqra-bridge-windows.zip` mit EXE,
+   Weboberfläche und Kurzanleitung).
+3. Hinweis: Die EXE wird im CI gebaut, aber nicht im Linux-Codespace
+   getestet; der Funktionstest erfolgt manuell unter Windows.
+
+## 18. Build-Übersicht
 
 ```bash
-make all      # Icons, Tests, Lint, Build und Validierung in einem Schritt
+make all        # Icons, Web-Build, Tests, Lint, ALLEP, Validierung, Bridge-Quellpaket
 ```
 
-Die fertige Datei liegt danach unter:
+Ergebnisse:
 
 ```
-dist/VeqraForm.allep
+dist/VeqraForm.allep            # Allplan-Plugin (Drag-and-Drop-Installation)
+dist/veqra-bridge-source.zip    # Bridge-Quellpaket inkl. Weboberfläche
+web/dist/                       # Gebaute Weboberfläche
 ```
 
-## Datei aus dem Codespace herunterladen
+## 19. Automatisch geprüft / manuell zu prüfen
 
-1. Im VS-Code-Explorer den Ordner `dist` öffnen.
-2. Rechtsklick auf `VeqraForm.allep` → **Download…**
+**Automatisch im Codespace geprüft** (125 Tests): Python-Logik, Bridge-API,
+Datenbank, Weboberfläche (Build), Protokoll, Authentifizierung/Pairing,
+simulierte Synchronisierung, simulierter Befehlsablauf, ALLEP-Struktur,
+Paket-Builds.
 
-Alternativ im Terminal: `gh codespace cp remote:$PWD/dist/VeqraForm.allep .` von einem lokalen Rechner aus.
-
-## Datei über GitHub Actions herunterladen
-
-1. Auf GitHub den Reiter **Actions** öffnen.
-2. Den Workflow **Build ALLEP** auswählen (läuft bei jedem Push auf `main`,
-   bei Versions-Tags `v*` und manuell über **Run workflow**).
-3. Im abgeschlossenen Lauf das Artifact **VeqraForm-allep** herunterladen.
-4. Bei Versions-Tags hängt die Datei zusätzlich am zugehörigen GitHub Release.
-
-## Installation per Drag-and-Drop in Allplan
-
-1. Allplan starten (Version 2025 oder neuer, z. B. 2025-1).
-2. Die Datei `VeqraForm.allep` per Drag-and-Drop in das Allplan-Fenster ziehen.
-3. Die Installationsabfrage bestätigen. Das Plugin wird für den aktuellen
-   Benutzer installiert (Installationsziel `USR`, Unterordner
-   `AllepPlugins\veqra\VEQRAFORM`).
-
-## Werkzeug im Reiter „Plug-ins“ öffnen
-
-1. In der Actionbar den Reiter **Plug-ins** wählen.
-2. Dort erscheint der Bereich **VEQRA FORM** mit dem Werkzeug **Quader erstellen**.
-3. Das Werkzeug anklicken – die Palette **VEQRA FORM** öffnet sich.
-
-## Ersten Quader erstellen
-
-1. Werkzeug **Quader erstellen** starten.
-2. In der Palette Länge, Breite und Höhe in Millimetern prüfen oder anpassen.
-3. In den Zeichenbereich wechseln und den Einfügepunkt anklicken.
-4. Der Quader wird als echter 3D-Körper im aktiven Teilbild erzeugt.
-
-## Manuelle Tests in Allplan
-
-Diese Punkte können nur in einer echten Allplan-Installation geprüft werden:
-
-- **Vorschau:** Nach dem Start des Werkzeugs muss der Quader in den eingestellten
-  Abmessungen am Fadenkreuz hängen und der Mausbewegung folgen.
-- **Punkteingabe:** Ein Klick in den Zeichenbereich muss den Einfügepunkt setzen;
-  Allplan-Punktfang (z. B. auf vorhandene Punkte) muss funktionieren.
-- **Modellerstellung:** Nach dem Klick muss ein 3D-Körper im Teilbild liegen
-  (kontrollierbar in der Isometrie und in der Animation).
-- **Abbrechen:** ESC während der Punkteingabe muss das Werkzeug beenden,
-  ohne dass ein Element erstellt wird.
-- **Rückgängig:** Strg+Z direkt nach der Erstellung muss den Quader wieder entfernen.
-
-## Fehlerbehebung
-
-- **Plugin erscheint nicht im Reiter Plug-ins:** Allplan neu starten und im
-  Plugin-Manager prüfen, ob „VEQRA FORM“ installiert ist. Gegebenenfalls die
-  Actionbar-Konfiguration zurücksetzen.
-- **Palette öffnet sich nicht:** Im Allplan-Trace-Fenster (Tracing aktivieren)
-  prüfen, ob ein Python-Fehler gemeldet wird.
-- **Ungültige Werte:** Werte ≤ 0 mm werden bereits von der Palette abgelehnt
-  (MinValue). Sollte dennoch ein ungültiger Wert ankommen, zeigt das Plugin eine
-  deutsche Fehlermeldung und erstellt kein Element.
-- **„Unable to install the allep package. It requires a newer version of Allplan.“:**
-  Die Allplan-Version ist älter als die in `install-config.yml` hinterlegte
-  Mindestversion (2025). Allplan vor 2025 unterstützt das ALLEP-Format nicht.
-- **Deinstallation:** In Allplan 2025 gibt es noch keinen Plugin-Manager.
-  Zum Entfernen laut offizieller Dokumentation die Ordner
-  `USR\Library\AllepPlugins\veqra\VEQRAFORM`,
-  `USR\PythonPartsScripts\AllepPlugins\veqra\VEQRAFORM` und
-  `USR\PythonPartsActionbar\AllepPlugins\veqra\VEQRAFORM` löschen und
-  Allplan neu starten.
-
-## Bekannte Grenzen
-
-- Es wird genau ein Werkzeug bereitgestellt (Quader über Palette und Einfügepunkt).
-- Der Quader wird immer achsparallel zum globalen Koordinatensystem erzeugt.
-- Es findet keine Texteingabe in natürlicher Sprache statt.
-- Die Allplan-Funktionalität selbst kann im Codespace nicht getestet werden –
-  Palette, Vorschau, Punkteingabe, Modellerstellung, Abbrechen und Rückgängig
-  müssen manuell in Allplan geprüft werden.
-- Das Paket verwendet das ALLEP-Format von Allplan 2025. Für Allplan 2026
-  existiert ein erweitertes Format (u. a. Dark-Mode-Icons, Plugin-Manager);
-  eine Migration ist für eine spätere Phase vorgesehen.
-
-## Spätere Entwicklungsphasen
-
-Ausdrücklich noch **nicht** enthalten und erst nach dem Nachweis des
-Grundsystems geplant:
-
-1. Claude API und natürliche Texteingabe
-2. Elementauswahl und Attribute
-3. Verschieben vorhandener Elemente
-4. Polylinien
-5. PDF- und IFC-Analyse
-6. Externe Runtime-Bridge und Weboberfläche
+**Manuell in Allplan zu prüfen**: Projektinformationen, Teilbildzugriff,
+Elementauslesen, Auswahlscan, Vorschau, Elementänderung, Attribute,
+Rückgängig, Verhalten bei großen Projekten – Schritt-für-Schritt-Anleitung
+in [docs/MANUAL_ALLPLAN_TEST.md](docs/MANUAL_ALLPLAN_TEST.md).

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veqra.local/schemas/command.schema.json",
+  "title": "VEQRA FORM Modellbefehl",
+  "description": "Strenges Datenmodell fuer Befehle aus der Weboberflaeche an Allplan. Loeschen, freie Codeausfuehrung, Datei- und Shell-Zugriffe sind nicht Teil des Schemas.",
+  "type": "object",
+  "required": ["protocol_version", "action", "parameters", "requires_allplan_confirmation"],
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": { "type": "string", "const": "1.0" },
+    "action": {
+      "type": "string",
+      "enum": [
+        "inspect_project",
+        "inspect_selection",
+        "synchronize_project",
+        "synchronize_selection",
+        "create_cuboid",
+        "move_selected_elements",
+        "set_selected_attributes"
+      ]
+    },
+    "parameters": { "type": "object" },
+    "requires_allplan_confirmation": { "type": "boolean" }
+  },
+  "$defs": {
+    "create_cuboid_parameters": {
+      "type": "object",
+      "required": ["length_mm", "width_mm", "height_mm", "placement_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "length_mm": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "width_mm": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "height_mm": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000 },
+        "placement_mode": { "type": "string", "enum": ["pick_point"] }
+      }
+    },
+    "move_selected_elements_parameters": {
+      "type": "object",
+      "required": ["dx_mm", "dy_mm", "dz_mm"],
+      "additionalProperties": false,
+      "properties": {
+        "dx_mm": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "dy_mm": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "dz_mm": { "type": "number", "minimum": -1000000, "maximum": 1000000 }
+      }
+    },
+    "set_selected_attributes_parameters": {
+      "type": "object",
+      "required": ["attributes"],
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": ["attribute_id", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "attribute_id": { "type": "integer", "minimum": 1 },
+              "value": { "type": ["string", "number"], "maxLength": 1000 }
+            }
+          }
+        }
+      }
+    },
+    "empty_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    }
+  }
+}

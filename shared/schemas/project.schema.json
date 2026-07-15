@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veqra.local/schemas/project.schema.json",
+  "title": "VEQRA FORM Projektdatensatz",
+  "description": "Synchronisierter Projektschnappschuss. Der vollstaendige lokale Projektpfad wird nicht uebertragen, nur ein SHA-256-Hash.",
+  "type": "object",
+  "required": ["project_id", "name", "path_hash", "allplan_version", "synchronized_at"],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": { "type": "string", "maxLength": 128 },
+    "name": { "type": "string", "maxLength": 255 },
+    "path_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256-Hash des lokalen Projektpfads"
+    },
+    "allplan_version": { "type": "string", "maxLength": 32 },
+    "attributes": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["attribute_id", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "attribute_id": { "type": "integer" },
+          "name": { "type": "string", "maxLength": 255 },
+          "value": { "type": ["string", "number", "boolean", "null"] }
+        }
+      }
+    },
+    "drawing_files": {
+      "type": "array",
+      "maxItems": 9999,
+      "items": {
+        "type": "object",
+        "required": ["number", "load_state"],
+        "additionalProperties": false,
+        "properties": {
+          "number": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "maxLength": 255 },
+          "load_state": { "type": "string", "enum": ["active", "active_background", "passive_background", "loaded", "unknown"] }
+        }
+      }
+    },
+    "element_statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total_count": { "type": "integer", "minimum": 0 },
+        "counts_by_type": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "counts_by_layer": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "model_bounding_box": { "$ref": "element.schema.json#/$defs/bounding_box" },
+        "warnings": { "type": "array", "items": { "type": "string", "maxLength": 500 }, "maxItems": 100 }
+      }
+    },
+    "synchronized_at": { "type": "string", "format": "date-time" },
+    "snapshot_version": { "type": "integer", "minimum": 1 },
+    "machine_name": { "type": "string", "maxLength": 255 },
+    "connector_version": { "type": "string", "maxLength": 32 },
+    "connection_status": { "type": "string", "enum": ["connected", "disconnected"] }
+  }
+}

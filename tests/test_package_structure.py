@@ -10,10 +10,26 @@ REQUIRED_FILES = [
     "requirements.in",
     "Library/VeqraFormCuboid.pyp",
     "Library/VeqraFormCuboid.png",
+    "Library/VeqraFormConnect.pyp",
+    "Library/VeqraFormConnect.png",
     "PythonPartsScripts/VeqraFormCuboid.py",
+    "PythonPartsScripts/VeqraFormConnect.py",
     "PythonPartsScripts/constants.py",
+    "PythonPartsScripts/veqra_protocol.py",
+    "PythonPartsScripts/veqra_bridge_client.py",
+    "PythonPartsScripts/veqra_model_reader.py",
     "PythonPartsActionbar/VeqraFormCuboid_24.png",
     "PythonPartsActionbar/VeqraFormCuboid_128.png",
+    "PythonPartsActionbar/VeqraFormConnect_24.png",
+    "PythonPartsActionbar/VeqraFormConnect_128.png",
+    "shared/VERSION.json",
+    "shared/schemas/protocol.schema.json",
+    "shared/schemas/project.schema.json",
+    "shared/schemas/element.schema.json",
+    "shared/schemas/command.schema.json",
+    "shared/schemas/result.schema.json",
+    "bridge/veqra_bridge/main.py",
+    "web/package.json",
     "tools/build_allep.py",
     "tools/validate_allep.py",
     "tools/generate_icons.py",
@@ -47,23 +63,34 @@ def test_no_runtime_template_files(repo_root: Path) -> None:
 
 
 def test_allplan_imports_only_in_adapter(repo_root: Path) -> None:
-    """Allplan-Importe duerfen nur in der Adapter-Schicht liegen."""
+    """Allplan-Importe duerfen nur in der Adapter-Schicht des Plugins liegen.
+
+    Bridge, Web und die Allplan-freien Plugin-Module (constants,
+    veqra_protocol, veqra_bridge_client) bleiben Allplan-frei.
+    """
 
     scripts_dir = repo_root / "PythonPartsScripts"
-    adapter = scripts_dir / "VeqraFormCuboid.py"
+    adapters = {
+        scripts_dir / "VeqraFormCuboid.py",
+        scripts_dir / "VeqraFormConnect.py",
+        scripts_dir / "veqra_model_reader.py",
+    }
 
-    for path in scripts_dir.rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        allplan_imports = [
-            node for node in ast.walk(tree)
-            if (isinstance(node, ast.Import)
-                and any(alias.name.startswith("NemAll_") for alias in node.names))
-            or (isinstance(node, ast.ImportFrom)
-                and node.module is not None
-                and node.module.startswith("NemAll_"))
-        ]
-        if path != adapter:
-            assert not allplan_imports, f"Allplan-Import ausserhalb der Adapter-Schicht: {path}"
+    search_dirs = [scripts_dir, repo_root / "bridge", repo_root / "tools"]
+    for search_dir in search_dirs:
+        for path in search_dir.rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            allplan_imports = [
+                node for node in ast.walk(tree)
+                if (isinstance(node, ast.Import)
+                    and any(alias.name.startswith("NemAll_") for alias in node.names))
+                or (isinstance(node, ast.ImportFrom)
+                    and node.module is not None
+                    and node.module.startswith("NemAll_"))
+            ]
+            if path not in adapters:
+                assert not allplan_imports, \
+                    f"Allplan-Import ausserhalb der Adapter-Schicht: {path}"
 
 
 def test_adapter_uses_official_entry_points(repo_root: Path) -> None:

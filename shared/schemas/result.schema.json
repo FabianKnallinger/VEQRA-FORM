@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veqra.local/schemas/result.schema.json",
+  "title": "VEQRA FORM Befehlsergebnis",
+  "description": "Rueckmeldung des Allplan-Plugins nach Pruefung, Bestaetigung und Ausfuehrung eines Befehls.",
+  "type": "object",
+  "required": ["command_id", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "command_id": { "type": "string", "maxLength": 64 },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "received",
+        "awaiting_confirmation",
+        "previewing",
+        "approved",
+        "executing",
+        "completed",
+        "rejected",
+        "failed",
+        "expired"
+      ]
+    },
+    "message": { "type": ["string", "null"], "maxLength": 2000 },
+    "created_element_uuids": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "maxItems": 10000
+    },
+    "modified_element_uuids": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "maxItems": 10000
+    },
+    "finished_at": { "type": ["string", "null"], "format": "date-time" }
+  }
+}
